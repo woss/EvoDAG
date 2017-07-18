@@ -13,8 +13,8 @@ def BER(y, yh):
         b += (~(y[m] == yh[m])).sum() / float(m.sum())
     return (b / float(u.shape[0])) * 100.
 
-res = ['TF','TDOF']
-folderRes = ['/shared/mgraffg/evodag-used-datasets/binary-C/evodag-0.10.6/','../res/evodag-0.10.6/TDOF/']
+res = ['EvoDAG','TF','TDOF']
+folderRes = ['/shared/mgraffg/evodag-used-datasets/binary-C/evodag-0.10.6/','../res/evodag-0.10.6/TF/','../res/evodag-0.10.6/TDOF/']
 folderData = '../data/'
 datasets = ['thyroid','banana','titanic','diabetis','breast-cancer','flare-solar','heart','ringnorm','twonorm','german','waveform','splice','image']
 datasets_size = [100,100,100,100,100,100,100,100,100,100,100,20,20]

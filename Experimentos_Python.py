@@ -12,7 +12,7 @@ def BER(y, yh):
     return (b / float(u.shape[0])) * 100.
 
 folderParams = '/shared/mgraffg/evodag-used-datasets/binary-C/evodag-0.10.6/' 
-folderRes = '../res/evodag-0.10.6/TDOF/'
+folderRes = '../res/evodag-0.10.6/TF/'
 #folderParams = '../res/res/TDOF/'
 #folderRes = '../res/res/TDOFselection2/'
 folderData = '../data/'
