@@ -33,6 +33,7 @@ class Variable(object):
         self._weight = weight
         self._eval_tr = None
         self._eval_ts = None
+        self._eval_tr_unique_vector = None
         self._ytr = ytr
         self._mask = mask
         self._fitness = None
@@ -192,6 +193,23 @@ class Variable(object):
     @hy.setter
     def hy(self, v):
         self._eval_tr = v
+        if v == None:
+            self.hy_unique = None
+        elif isinstance(v,list):
+            self.hy_unique = []
+            for i in range(len(v)):
+                self.hy_unique.append(SparseArray.unit_vector(v[i]))
+        elif isinstance(v,SparseArray):
+            self.hy_unique = SparseArray.unit_vector(v)
+
+    @property
+    def hy_unique(self):
+        "Predicted values of the training and validation set as an unique vector"
+        return self._eval_tr_unique_vector
+
+    @hy_unique.setter
+    def hy_unique(self, v):
+        self._eval_tr_unique_vector = v
 
     @property
     def hy_test(self):
