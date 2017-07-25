@@ -40,7 +40,7 @@ for i in range(len(datasets)):
         fileParams = folderParams+archivo+'_test_data_'+str(j)+ '.params'
         fileModel = folderRes+archivo+'_test_data_'+str(j)+'.model'
         filePredict = folderRes+archivo+'_test_data_'+str(j)+ '.predict'
-        os.system('EvoDAG-params -C -P ' +fileParams+' -u '+str(ncores)+' '+fileDataTrain)
+        #os.system('EvoDAG-params -C -P ' +fileParams+' -u '+str(ncores)+' '+fileDataTrain)
         os.system('EvoDAG-train -P '+fileParams+' -m '+fileModel+' -u '+str(ncores)+' '+fileDataTrain)
         os.system('EvoDAG-predict -m '+fileModel+' -o '+filePredict+' -u '+str(ncores)+' '+fileDataTestData)
         p = subprocess.Popen(['EvoDAG-utils --size ' +fileModel],stdout=subprocess.PIPE,shell=True)
