@@ -494,17 +494,17 @@ class EvoDAG(object):
 
         ''''''
         if func.nargs == 1:
-            k = self.tournament_closer(func,10)
+            k = self.tournament_closer(func,2)
             args.append(k)
             return args
         ''''''
         #Searching n arguments based on orthogonality
         ''''''
-        if func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN':
+        if func.symbol == 'NB' or func.symbol == 'MN':
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
-                m = self.tournament_orthogonality(10,args)
+                m = self.tournament_orthogonality(2,args)
                 args.append(m)
             return args
         ''''''
@@ -514,7 +514,7 @@ class EvoDAG(object):
             k = self.population.tournament()
             args.append(k)
             desired_semantics = EvoDAG.calculate_desired(func,self.y,self.population.hist[self.population.population[k].position].hy,unique=True)
-            j = self.tournament_desired(desired_semantics,10,args,unique=True)
+            j = self.tournament_desired(desired_semantics,2,args,unique=True)
             args.append(j)
 
             while len(args)<func.nargs:
@@ -523,7 +523,7 @@ class EvoDAG(object):
                 if individual is None:
                     break
                 desired_semantics = EvoDAG.calculate_desired(func,self.y,individual.hy,unique=True)
-                m = self.tournament_desired(desired_semantics,10,args,unique=True)
+                m = self.tournament_desired(desired_semantics,2,args,unique=True)
                 args.append(m)
             return args
         ''''''
