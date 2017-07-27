@@ -501,7 +501,7 @@ class EvoDAG(object):
         '''
         #Searching n arguments based on orthogonality
         ''''''
-        if func.symbol = '+': #func.symbol == 'NB' or func.symbol == 'MN':
+        if func.symbol == '+': #func.symbol == 'NB' or func.symbol == 'MN':
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
