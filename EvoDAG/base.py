@@ -500,18 +500,18 @@ class EvoDAG(object):
             return args
         '''
         #Searching n arguments based on orthogonality
-        ''''''
-        if func.symbol == '+': #func.symbol == 'NB' or func.symbol == 'MN':
+        '''
+        if func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN':
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
                 m = self.tournament_orthogonality(2,args)
                 args.append(m)
             return args
-        ''''''
         '''
+        ''''''
         #Searching n arguments based on desired unique vectors
-        if func.symbol == '*' or func.symbol == '/':
+        if func.symbol == '+': #func.symbol == '*' or func.symbol == '/':
             k = self.population.tournament()
             args.append(k)
             desired_semantics = EvoDAG.calculate_desired(func,self.y,self.population.hist[self.population.population[k].position].hy,unique=True)
@@ -527,7 +527,7 @@ class EvoDAG(object):
                 m = self.tournament_desired(desired_semantics,2,args,unique=True)
                 args.append(m)
             return args
-        '''
+        ''''''
 
         if func.unique_args:
             return self.get_unique_args(func)
