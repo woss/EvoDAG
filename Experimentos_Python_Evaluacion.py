@@ -15,8 +15,8 @@ def BER(y, yh):
 
 #res = ['EvoDAG','Proposal']
 #folderRes = ['/shared/mgraffg/evodag-used-datasets/binary-C/evodag-0.10.6/','../res/evodag-0.10.6/TDOF_params/']
-res = ['TDOF_params','TDOF10_params']
-folderRes = ['../res/evodag-0.10.6/TDOF_params/','../res/evodag-0.10.6/TDOF10_params/']
+res = ['TF+','TD+','TO+']
+folderRes = ['../res/evodag-0.10.6/TF+/','../res/evodag-0.10.6/TD+/','../res/evodag-0.10.6/TO+/']
 folderData = '../data/'
 datasets = ['thyroid','banana','titanic','diabetis','breast-cancer','flare-solar','heart','ringnorm','twonorm','german','waveform','splice','image']
 datasets_size = [100,100,100,100,100,100,100,100,100,100,100,20,20]

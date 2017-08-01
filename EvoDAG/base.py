@@ -37,13 +37,12 @@ class EvoDAG(object):
     def __init__(self, generations=np.inf, popsize=10000,
                  seed=0, tournament_size=2,
                  early_stopping_rounds=-1,
-                 function_set=[Add],
-                 #function_set=[Add, Mul, Div, Fabs,
-                 #              Exp, Sqrt, Sin, Cos, Log1p,
-                 #              Sq, Min, Max, Atan2, Hypot, Acos, Asin, Atan,
-                 #              Tan, Cosh, Sinh, Tanh, Acosh, Asinh, Atanh,
-                 #              Expm1, Log, Log2, Log10, Lgamma, Sign,
-                 #              Ceil, Floor, NaiveBayes, NaiveBayesMN],
+                 function_set=[Add, Mul, Div, Fabs,
+                               Exp, Sqrt, Sin, Cos, Log1p,
+                               Sq, Min, Max, Atan2, Hypot, Acos, Asin, Atan,
+                               Tan, Cosh, Sinh, Tanh, Acosh, Asinh, Atanh,
+                               Expm1, Log, Log2, Log10, Lgamma, Sign,
+                               Ceil, Floor, NaiveBayes, NaiveBayesMN],
                  tr_fraction=0.5, population_class=SteadyState,
                  number_tries_feasible_ind=30, time_limit=None,
                  unique_individuals=True, classifier=True,
@@ -493,25 +492,25 @@ class EvoDAG(object):
     def get_args(self, func):
         args = []
 
-        '''
+        ''''''
         if func.nargs == 1:
             k = self.tournament_closer(func,2)
             args.append(k)
             return args
-        '''
+        ''''''
         #Searching n arguments based on orthogonality
-        '''
-        if func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN':
+        ''''''
+        if func.symbol == 'NB' or func.symbol == 'MN':
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
                 m = self.tournament_orthogonality(2,args)
                 args.append(m)
             return args
-        '''
+        ''''''
         ''''''
         #Searching n arguments based on desired unique vectors
-        if func.symbol == '+': #func.symbol == '*' or func.symbol == '/':
+        if func.symbol == '+' or func.symbol == '*' or func.symbol == '/':
             k = self.population.tournament()
             args.append(k)
             desired_semantics = EvoDAG.calculate_desired(func,self.y,self.population.hist[self.population.population[k].position].hy,unique=True)

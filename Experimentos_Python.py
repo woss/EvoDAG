@@ -13,7 +13,7 @@ def BER(y, yh):
 
 #folderParams = '/shared/mgraffg/evodag-used-datasets/binary-C/evodag-0.10.6/' 
 folderParams = '../res/evodag-0.10.6/TDOF_params/'
-folderRes = '../res/evodag-0.10.6/TD+/'
+folderRes = '../res/evodag-0.10.6/TDOF_D+/'
 folderData = '../data/'
 ncores = 32
 datasets = ['thyroid','banana','titanic','diabetis','breast-cancer','flare-solar','heart','ringnorm','twonorm','german','waveform','splice','image']
