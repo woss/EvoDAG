@@ -12,9 +12,9 @@ def BER(y, yh):
     return (b / float(u.shape[0])) * 100.
 
 #folderParams = '/shared/mgraffg/evodag-used-datasets/binary-C/evodag-0.10.6/' 
-folderParams = '../res/evodag-0.10.6/TDOF_params/'
-folderRes = '../res/evodag-0.10.6/TDOF_D+/'
-folderData = '../data/'
+folderParams = '/shared/cnsanchez/EvoDAG_experimentos/res/ropec2017/TDOF_params/'
+folderRes = '/shared/cnsanchez/EvoDAG_experimentos/res/oct2017/TDOF/'
+folderData = '/shared/cnsanchez/EvoDAG_experimentos/data/'
 ncores = 32
 datasets = ['thyroid','banana','titanic','diabetis','breast-cancer','flare-solar','heart','ringnorm','twonorm','german','waveform','splice','image']
 datasets_size = [100,100,100,100,100,100,100,100,100,100,100,20,20]
