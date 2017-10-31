@@ -442,7 +442,7 @@ class EvoDAG(object):
             k = self.tournament_closer(func,2)
             args.append(k)
             return args
-        
+
         #Searching n arguments based on orthogonality
         if func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN':
             k = self.population.tournament()
@@ -564,6 +564,7 @@ class EvoDAG(object):
             self._multiclass = True
             return self.multiclass(X, y, test_set=test_set)
         self.y = y
+        self.dimensional_size = dimensional_size
         if test_set is not None:
             self.Xtest = test_set
         for _ in range(self._number_tries_feasible_ind):
