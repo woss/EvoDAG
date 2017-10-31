@@ -552,7 +552,7 @@ class EvoDAG(object):
         "Replace an individual in the population with individual a"
         self.population.replace(a)
 
-    def fit(self, X, y, test_set=None):
+    def fit(self, X, y, test_set=None,dimensional_size=None):
         "Evolutive process"
         self._init_time = time.time()
         self.X = X

@@ -35,23 +35,23 @@ except ImportError:
         return x
 
 
-def init_evodag(seed_args_X_y_test):
-    seed, args, X, y, test = seed_args_X_y_test
-    m = EvoDAG(seed=seed, **args).fit(X, y, test_set=test)
+def init_evodag(seed_args_X_y_test_ds):
+    seed, args, X, y, test,ds = seed_args_X_y_test_ds
+    m = EvoDAG(seed=seed, **args).fit(X, y, test_set=test,dimensional_size=ds)
     m = m.model()
     gc.collect()
     return m
 
 
-def rs_evodag(args_X_y):
-    args, X, y = args_X_y
+def rs_evodag(args_X_y_ds):
+    args, X, y,ds = args_X_y_ds
     rs = RandomParameterSearch
     fit = []
     init = time.time()
     for seed in range(3):
         try:
             evo = EvoDAG(seed=seed,
-                         **rs.process_params(args)).fit(X, y)
+                         **rs.process_params(args)).fit(X, y,dimensional_size=ds)
             fit.append(evo.model().fitness_vs)
         except RuntimeError:
             fit.append(-np.inf)
@@ -85,6 +85,12 @@ class CommandLine(object):
                                  help='Ensemble size',
                                  dest='ensemble_size',
                                  default=30,
+                                 type=int)
+    def dimensional_size(self):
+        self.parser.add_argument('-d','--dimensional-size',
+                                 help='When the input data has a specific structure (e.g. images), example: -d 300 400',
+                                 dest='dimensional_size',
+                                 nargs = '+',
                                  type=int)
 
     def cores(self):
@@ -314,7 +320,7 @@ class CommandLine(object):
         if self.data.ensemble_size == 1:
             if self.data.seed >= 0:
                 kw['seed'] = self.data.seed
-            self.evo = EvoDAG(**kw).fit(self.X, self.y, test_set=self.Xtest)
+            self.evo = EvoDAG(**kw).fit(self.X, self.y, test_set=self.Xtest,dimensional_size = self.data.dimensional_size)
             self.model = self.evo.model()
         else:
             min_size = self.data.min_size
@@ -323,7 +329,7 @@ class CommandLine(object):
             end = init + esize
             evo = []
             while len(evo) < esize:
-                args = [(x, kw, self.X, self.y, self.Xtest)
+                args = [(x, kw, self.X, self.y, self.Xtest, self.data.dimensional_size)
                         for x in range(init, end)]
                 if self.data.cpu_cores == 1:
                     _ = [init_evodag(x) for x in tqdm(args, total=len(args))]
@@ -370,6 +376,7 @@ class CommandLineParams(CommandLine):
         self.label2id = {}
         self.parser = argparse.ArgumentParser(description="EvoDAG")
         self.training_set()
+        self.dimensional_size()
         self.init_params()
         self.optimize_parameters()
         self.cores()
@@ -481,11 +488,11 @@ class CommandLineParams(CommandLine):
                     fpt.write(json.dumps(x, sort_keys=True, indent=2))
             return
         if self.data.cpu_cores == 1:
-            res = [rs_evodag((args, self.X, self.y))
+            res = [rs_evodag((args, self.X, self.y,self.data.dimensional_size))
                    for args in tqdm(rs, total=rs._npoints)]
         else:
             p = Pool(self.data.cpu_cores, maxtasksperchild=1)
-            args = [(args, self.X, self.y) for args in rs]
+            args = [(args, self.X, self.y,self.data.dimensional_size) for args in rs]
             res = [x for x in tqdm(p.imap_unordered(rs_evodag, args),
                                    total=len(args))]
             p.close()
@@ -528,6 +535,7 @@ class CommandLineTrain(CommandLine):
         self.model()
         self.cores()
         self.ensemble()
+        self.dimensional_size()
         self.test_set()
         self.version()
 
