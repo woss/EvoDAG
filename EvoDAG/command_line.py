@@ -193,6 +193,7 @@ class CommandLine(object):
             self.model = self.evo.model()
         else:
             model_dir = '.dir_' + model_file
+            model_dir = model_file
             if not os.path.isdir(model_dir):
                 os.mkdir(model_dir)
             min_size = self.data.min_size
