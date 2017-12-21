@@ -377,14 +377,17 @@ class EvoDAG(object):
         #else:
         return desired
 
-    @staticmethod
-    def calculate_semantic_difference(semantics1,semantics2):
+    def calculate_semantic_difference(self,semantics1,semantics2):
         dif = 0
         if isinstance(semantics1,list):
             for i in range(len(semantics1)):
-                dif += semantics1[i].cosine_distance(semantics2[i])
+                s1 = semantics1[i].mul(self._mask_ts)
+                s2 = semantics2[i].mul(self._mask_ts)
+                dif += s1.cosine_distance(s2)
         else:
-            dif = semantics1.cosine_distance(semantics2) 
+            s1 = semantics1.mul(self._mask_ts)
+            s2 = semantics2.mul(self._mask_ts)
+            dif = s1.cosine_distance(s2) 
         return dif
 
     def tournament_desired(self,desired_semantics,size,args):
@@ -393,7 +396,7 @@ class EvoDAG(object):
         for i in range(size):
             k = sample[i]
             Dif[i,0] = k
-            Dif[i,1] = EvoDAG.calculate_semantic_difference(desired_semantics,self.population.hist[self.population.population[k].position].hy)
+            Dif[i,1] = self.calculate_semantic_difference(desired_semantics,self.population.hist[self.population.population[k].position].hy)
         arguments = Dif[ np.argsort(Dif[:,1]),0]
         for arg in arguments:
             if arg not in args:
@@ -412,10 +415,10 @@ class EvoDAG(object):
             Fit[i,1] = individualk.fitness if individualk is not None else -10000
         arguments = Fit[ np.argsort(Fit[:,1]),0]
         return int(arguments[0])
-        
-    @staticmethod
-    def calculate_orthogonality(vectors,vector):
+       
+    def calculate_orthogonality(self,vectors,vector):
         o = 0
+        vector = vector.mul(self._mask_ts)
         for v in vectors:
             o+= abs(SparseArray.dot(v,vector))
         return o
@@ -436,7 +439,7 @@ class EvoDAG(object):
             if isinstance( self.population.hist[self.population.population[k].position].hy,list ):
                 vector = self.population.hist[self.population.population[k].position].hy[0]
             Dif[i,0] = k
-            Dif[i,1] = EvoDAG.calculate_orthogonality(vectors,vector)
+            Dif[i,1] = self.calculate_orthogonality(vectors,vector)
         arguments = Dif[ np.argsort(Dif[:,1]),0]
         for arg in arguments:
             if arg not in args:
@@ -452,7 +455,7 @@ class EvoDAG(object):
         #    return args
 
         #Searching n arguments based on orthogonality
-        if np.random.rand()<0.0 and (func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN'):
+        if np.random.rand()<=0.5 and (func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN'):
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
@@ -461,7 +464,7 @@ class EvoDAG(object):
             return args
         
         #Searching n arguments based on desired unique vectors
-        if np.random.rand()<0.0 and (func.symbol == '*' or func.symbol == '/'):
+        if np.random.rand()<=0.5 and (func.symbol == '*' or func.symbol == '/'):
             k = self.population.tournament()
             args.append(k)
             desired_semantics = EvoDAG.calculate_desired(func,self.y,self.population.hist[self.population.population[k].position].hy)
@@ -599,6 +602,11 @@ class EvoDAG(object):
         if self._remove_raw_inputs:
             for x in range(self.nvar):
                 self._X[x] = None
+        
+        #print('base._mask_ts.index',len(self._mask_ts.index),self._mask_ts.index)
+        #print('base._mask_ts.data',len(self._mask_ts.data),self._mask_ts.data)
+        #print('base._mask_vs.index',len(self._mask_vs.index),self._mask_vs.index)
+        #print('base._mask_vs.data',len(self._mask_vs.data),self._mask_vs.data)
         while not self.stopping_criteria():
             try:
                 a = self.random_offspring()
