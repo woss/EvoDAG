@@ -99,6 +99,10 @@ class Model(object):
     def classifier(self):
         "whether this is classification or regression task"
         return self._classifier
+    @property
+    def fitness(self):
+        "Fitness in the training set"
+        return self._hist[-1].fitness
 
     @property
     def fitness_vs(self):
@@ -316,6 +320,12 @@ class Ensemble(object):
     @property
     def classifier(self):
         return self._classifier
+
+    @property
+    def fitness(self):
+        "Median Fitness in the training set"
+        l = [x.fitness for x in self.models]
+        return np.median(l)
 
     @property
     def fitness_vs(self):
