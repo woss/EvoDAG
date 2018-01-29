@@ -338,14 +338,154 @@ class EvoDAG(object):
             return None
         return res
 
+
+    def get_sample_population(self,size):
+        if size >= self.population.popsize or size == 0:
+            size = self.population.popsize
+        if size==0:
+            size = 1
+        res = []
+        done = {}
+        for _ in range(size): 
+            k = np.random.randint(self.population.popsize)
+            while k in done:
+                k = np.random.randint(self.population.popsize)
+            done[k] = 1
+            res.append(k)
+        return res,size
+
+    @staticmethod
+    def calculate_desired(func,target,hy):
+        if isinstance(target,list):
+            desired = []
+            #desired_unique = []
+            for i in range(len(target)):
+                if func.symbol == '+':
+                    desired.append(SparseArray.sub(target[i],hy[i]))
+                elif func.symbol == '*':
+                    desired.append(SparseArray.div(target[i],hy[i]))
+                elif func.symbol == '/':
+                    desired.append(SparseArray.div(hy[i],target[i]))
+                #desired_unique.append(SparseArray.unit_vector(desired[i]))
+        else:
+            if func.symbol == '+':
+                desired = SparseArray.sub(target,hy)
+            elif func.symbol == '*':
+                desired = SparseArray.div(target,hy)
+            elif func.symbol == '/':
+                desired = SparseArray.div(hy,target)
+            #desired_unique = SparseArray.unit_vector(desired)
+        #if unique:
+        #    return desired_unique
+        #else:
+        return desired
+
+    def calculate_semantic_difference(self,semantics1,semantics2):
+        dif = 0
+        if isinstance(semantics1,list):
+            for i in range(len(semantics1)):
+                s1 = semantics1[i].mul(self._mask_ts)
+                s2 = semantics2[i].mul(self._mask_ts)
+                dif += s1.cosine_distance(s2)
+        else:
+            s1 = semantics1.mul(self._mask_ts)
+            s2 = semantics2.mul(self._mask_ts)
+            dif = s1.cosine_distance(s2) 
+        return dif
+
+    def tournament_desired(self,desired_semantics,size,args):
+        sample,size = self.get_sample_population(size)
+        Dif = np.zeros((size,2),float)
+        for i in range(size):
+            k = sample[i]
+            Dif[i,0] = k
+            Dif[i,1] = self.calculate_semantic_difference(desired_semantics,self.population.hist[self.population.population[k].position].hy)
+        arguments = Dif[ np.argsort(Dif[:,1]),0]
+        for arg in arguments:
+            if arg not in args:
+                return int(arg)
+        return 0
+
+    def tournament_closer(self,func,size):
+        sample, size = self.get_sample_population(size)
+        Fit = np.zeros((size,2),float)
+        for i in range(size):
+            k = sample[i]
+            args = [k]
+            argsi = [self.population.population[x].position for x in args]
+            individualk = self._random_offspring(func,argsi)
+            Fit[i,0] = k
+            Fit[i,1] = individualk.fitness if individualk is not None else -10000
+        arguments = Fit[ np.argsort(Fit[:,1]),0]
+        return int(arguments[0])
+       
+    def calculate_orthogonality(self,vectors,vector):
+        o = 0
+        vector = vector.mul(self._mask_ts)
+        for v in vectors:
+            o+= abs(SparseArray.dot(v,vector))
+        return o
+    
+    def tournament_orthogonality(self,size,args):
+        sample,size = self.get_sample_population(size)
+        vectors = []
+        for k in args:
+            if isinstance( self.population.hist[self.population.population[k].position].hy,list ):
+                vectors.append( self.population.hist[self.population.population[k].position].hy[0] )
+            else:
+                vectors.append( self.population.hist[self.population.population[k].position].hy )
+        
+        Dif = np.zeros((size,2),float)
+        for i in range(size):
+            k = sample[i]
+            vector = self.population.hist[self.population.population[k].position].hy
+            if isinstance( self.population.hist[self.population.population[k].position].hy,list ):
+                vector = self.population.hist[self.population.population[k].position].hy[0]
+            Dif[i,0] = k
+            Dif[i,1] = self.calculate_orthogonality(vectors,vector)
+        arguments = Dif[ np.argsort(Dif[:,1]),0]
+        for arg in arguments:
+            if arg not in args:
+                return int(arg)
+        return 0
+
     def get_args(self, func):
         args = []
+
+        #if func.nargs == 1:
+        #    k = self.tournament_closer(func,2)
+        #    args.append(k)
+        #    return args
+
+        #Searching n arguments based on orthogonality
+        if np.random.rand()<=1.0 and (func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN'):
+            k = self.population.tournament()
+            args.append(k)
+            while len(args)<func.nargs:
+                m = self.tournament_orthogonality(2,args)
+                args.append(m)
+            return args
+        
+        #Searching n arguments based on desired unique vectors
+        if np.random.rand()<=1.0 and (func.symbol == '*' or func.symbol == '/'):
+            k = self.population.tournament()
+            args.append(k)
+            desired_semantics = EvoDAG.calculate_desired(func,self.y,self.population.hist[self.population.population[k].position].hy)
+            j = self.tournament_desired(desired_semantics,2,args)
+            args.append(j)
+        
+            while len(args)<func.nargs:
+                argsi = [self.population.population[x].position for x in args]
+                individual = self._random_offspring(func, argsi)
+                if individual is None:
+                    break
+                desired_semantics = EvoDAG.calculate_desired(func,self.y,individual.hy)
+                m = self.tournament_desired(desired_semantics,2,args)
+                args.append(m)
+            return args
+
         if func.unique_args:
             return self.get_unique_args(func)
-        try:
-            min_nargs = func.min_nargs
-        except AttributeError:
-            min_nargs = func.nargs
         for j in range(func.nargs):
             k = self.population.tournament()
             for _ in range(self._number_tries_unique_args):
@@ -354,8 +494,6 @@ class EvoDAG(object):
                 else:
                     k = self.population.tournament()
             args.append(k)
-        if len(args) < min_nargs:
-            return None
         return args
 
     def random_offspring(self):
