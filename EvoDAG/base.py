@@ -384,8 +384,8 @@ class EvoDAG(object):
         dif = 0
         if isinstance(semantics1,list):
             for i in range(len(semantics1)):
-                s1 = semantics1[i].mul(self._mask_ts)
-                s2 = semantics2[i].mul(self._mask_ts)
+                s1 = semantics1[i].mul(SparseArray.ones_positionnozero(self._mask_ts))
+                s2 = semantics2[i].mul(SparseArray.ones_positionnozero(self._mask_ts))
                 dif += s1.cosine_distance(s2)
         else:
             s1 = semantics1.mul(self._mask_ts)
@@ -421,7 +421,7 @@ class EvoDAG(object):
        
     def calculate_orthogonality(self,vectors,vector):
         o = 0
-        vector = vector.mul(self._mask_ts)
+        vector = vector.mul(SparseArray.ones_positionnozero(self._mask_ts))
         for v in vectors:
             o+= abs(SparseArray.dot(v,vector))
         return o
@@ -449,6 +449,36 @@ class EvoDAG(object):
                 return int(arg)
         return 0
 
+    def calculate_correlation(self,vectors,vector):
+        o = 0
+        vector = vector.mul(SparseArray.ones_positionnozero(self._mask_ts))
+        for v in vectors:
+            o+= abs(SparseArray.pearson_coefficient(v,vector))
+        return o
+
+    def tournament_correlation(self,size,args):
+        sample,size = self.get_sample_population(size)
+        vectors = []
+        for k in args:
+            if isinstance( self.population.hist[self.population.population[k].position].hy,list ):
+                vectors.append( self.population.hist[self.population.population[k].position].hy[0] )
+            else:
+                vectors.append( self.population.hist[self.population.population[k].position].hy )
+
+        Dif = np.zeros((size,2),float)
+        for i in range(size):
+            k = sample[i]
+            vector = self.population.hist[self.population.population[k].position].hy
+            if isinstance( self.population.hist[self.population.population[k].position].hy,list ):
+                vector = self.population.hist[self.population.population[k].position].hy[0]
+            Dif[i,0] = k
+            Dif[i,1] = self.calculate_correlation(vectors,vector)
+        arguments = Dif[ np.argsort(Dif[:,1]),0]
+        for arg in arguments:
+            if arg not in args:
+                return int(arg)
+        return 0
+
     def get_args(self, func):
         args = []
 
@@ -457,8 +487,16 @@ class EvoDAG(object):
         #    args.append(k)
         #    return args
 
+        if np.random.rand()<=1.0 and (func.symbol=='NB' or func.symbol == 'MN' ):
+            k = self.population.tournament()
+            args.append(k)
+            while len(args)<func.nargs:
+                m = self.tournament_correlation(2,args)
+                args.append(m)
+            return args
+
         #Searching n arguments based on orthogonality
-        if np.random.rand()<=1.0 and (func.symbol == '+' or func.symbol == 'NB' or func.symbol == 'MN'):
+        if np.random.rand()<=1.0 and (func.symbol == '+' or func.symbol == 'Centroid'):
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
