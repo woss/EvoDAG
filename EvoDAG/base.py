@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-
+import math
+import pandas
 import numpy as np
 import logging
 from SparseArray import SparseArray
@@ -479,33 +479,64 @@ class EvoDAG(object):
                 return int(arg)
         return 0
 
+    def get_corr_args(self,args):
+        vectors = []
+        for k in args:
+            if isinstance( self.population.hist[self.population.population[k].position].hy,list ):
+                vectors.append( self.population.hist[self.population.population[k].position].hy[0] )
+            else:
+                vectors.append( self.population.hist[self.population.population[k].position].hy )
+        for k in range(len(vectors)):
+            vectors[k] = vectors[k].mul(SparseArray.ones_positionnozero(self._mask_ts))
+        corr = 0
+        cont = 0
+        for i in range(len(vectors)):
+            for j in range(i+1,len(vectors)):
+                p = abs(vectors[i].pearson_coefficient(vectors[j]))
+                #if math.isnan(p):
+                #    print('isnan')
+                corr += p
+                cont +=1
+        if cont==0 or corr==0:
+            return 0
+        return corr/cont	
+
     def get_args(self, func):
         args = []
+        
+        self.hrow = []
+        self.hrow.append(func.symbol)
+        
+        if np.random.rand()<0.0 and func.nargs == 1:
+            k = self.tournament_closer(func,2)
+            args.append(k)
+            return args
 
-        #if func.nargs == 1:
-        #    k = self.tournament_closer(func,2)
-        #    args.append(k)
-        #    return args
-
-        if np.random.rand()<=1.0 and (func.symbol=='NB' or func.symbol == 'MN' ):
+        if np.random.rand()<0.0 and (func.symbol=='NB' or func.symbol == 'MN' ):
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
                 m = self.tournament_correlation(2,args)
                 args.append(m)
+            self.hrow.append('correlation')
+            self.hrow.append(len(args))
+            self.hrow.append(self.get_corr_args(args))
             return args
 
         #Searching n arguments based on orthogonality
-        if np.random.rand()<=1.0 and (func.symbol == '+' or func.symbol == 'Centroid'):
+        if np.random.rand()<=0.0 and (func.symbol == '+' or func.symbol=='NB' or func.symbol=='MN'):
             k = self.population.tournament()
             args.append(k)
             while len(args)<func.nargs:
                 m = self.tournament_orthogonality(2,args)
                 args.append(m)
+            self.hrow.append('orthogonality')       
+            self.hrow.append(len(args))
+            self.hrow.append(self.get_corr_args(args))
             return args
         
-        #Searching n arguments based on desired unique vectors
-        if np.random.rand()<=1.0 and (func.symbol == '*' or func.symbol == '/'):
+        #Searching n argumens based on desired unique vectors
+        if np.random.rand()<0.0 and (func.symbol == '*' or func.symbol == '/'):
             k = self.population.tournament()
             args.append(k)
             desired_semantics = EvoDAG.calculate_desired(func,self.y,self.population.hist[self.population.population[k].position].hy)
@@ -520,10 +551,17 @@ class EvoDAG(object):
                 desired_semantics = EvoDAG.calculate_desired(func,self.y,individual.hy)
                 m = self.tournament_desired(desired_semantics,2,args)
                 args.append(m)
+            self.hrow.append('desired')
+            self.hrow.append(len(args))
+            self.hrow.append(self.get_corr_args(args))
             return args
         
         if func.unique_args:
-            return self.get_unique_args(func)
+            args = self.get_unique_args(func)
+            self.hrow.append('fitness')
+            self.hrow.append(len(args))
+            self.hrow.append(self.get_corr_args(args))
+            return args
         try:
             min_nargs = func.min_nargs
         except AttributeError:
@@ -538,6 +576,10 @@ class EvoDAG(object):
             args.append(k)
         if len(args) < min_nargs:
             return None
+        self.hrow.append('fitness')
+        self.hrow.append(len(args))
+        self.hrow.append(self.get_corr_args(args))
+        #self.Hist.append(hrow)
         return args
 
     def random_offspring(self):
@@ -624,6 +666,9 @@ class EvoDAG(object):
         return np.array(L).T
 
     def fit(self, X, y, test_set=None):
+        self.Hist = [] #deñete
+        self.Best = [] #delete
+        self.Fit = [] #delete
         "Evolutive process"
         self._init_time = time.time()
         self.X = X
@@ -659,14 +704,36 @@ class EvoDAG(object):
         if self._remove_raw_inputs:
             for x in range(self.nvar):
                 self._X[x] = None
+        #delete
+        cont = 0
+        #delete
         while not self.stopping_criteria():
             try:
                 a = self.random_offspring()
+                self.hrow.append(a.fitness_vs) #delete
+                self.Hist.append(self.hrow) #delete
+                self.Best.append(self.population.estopping.fitness_vs) #delete
+                cont = cont +1 #delete
+                if cont%100==0: #delete
+                    mfitness = 0.0 #delete
+                    #print('Cont',cont)                    #delete
+                    for k in range(self.population.popsize):  #delete
+                        mfitness += self.population.population[k].fitness_vs #delet
+                    self.Fit.append(mfitness/self.population.popsize) #delete
             except RuntimeError as err:
                 self._logger.info("Done evolution (RuntimeError (%s), hist: %s)" % (err, len(self.population.hist)))
                 return self
             self.replace(a)
         self._logger.info("Done evolution (hist: %s)" % len(self.population.hist))
+        self.Hist = np.array(self.Hist)
+        tournament = 'fitness' # 'orthogonal'
+        print('a'+tournament+'.csv',pandas.read_csv('/shared/cnsanchez/texto/output/tournaments_info/a'+tournament+'.csv').values)
+        file = pandas.read_csv('/shared/cnsanchez/texto/output/tournaments_info/a'+tournament+'.csv').values[0][1]
+        k = pandas.read_csv('/shared/cnsanchez/texto/output/tournaments_info/a'+tournament+'.csv').values[1][1]
+        pandas.DataFrame(data=[file,int(k)+1]).to_csv('/shared/cnsanchez/texto/output/tournaments_info/a'+tournament+'.csv')
+        pandas.DataFrame(data=self.Hist).to_csv('/shared/cnsanchez/texto/output/tournaments_info/'+tournament+'_'+file+'_ind'+str(k)+'.csv')
+        pandas.DataFrame(data=self.Best).to_csv('/shared/cnsanchez/texto/output/tournaments_info/'+tournament+'_'+file+'_bestfitness'+str(k)+'.csv')
+        pandas.DataFrame(data=self.Fit).to_csv('/shared/cnsanchez/texto/output/tournaments_info/'+tournament+'_'+file+'_fitness_generation'+str(k)+'.csv')
         return self
 
     def trace(self, n):
